@@ -53,10 +53,12 @@ async function handler(sock, msg, args, { reply }) {
   fs.writeFileSync(inputPath, buffer)
 
   // Comando ffmpeg
-  const ffmpegCmd =
-    type === 'image'
-      ? `ffmpeg -y -i "${inputPath}" -vf "scale=512:512:force_original_aspect_ratio=decrease,fps=15" -loop 0 -ss 0 -t 10 -preset default -an -vsync 0 ">
-      : `ffmpeg -y -i "${inputPath}" -vf "scale=512:512:force_original_aspect_ratio=decrease,fps=15" -t 10 -an -preset default "${outputPath}"`
+  let ffmpegCmd = ''
+  if (type === 'image') {
+    ffmpegCmd = `ffmpeg -y -i "${inputPath}" -vf "scale=512:512:force_original_aspect_ratio=decrease" -preset default "${outputPath}"`
+  } else if (type === 'video') {
+    ffmpegCmd = `ffmpeg -y -i "${inputPath}" -vf "scale=512:512:force_original_aspect_ratio=decrease,fps=15" -t 10 -an -preset default "${outputPath}"`
+  }
 
   exec(ffmpegCmd, async (err) => {
     if (err) {
