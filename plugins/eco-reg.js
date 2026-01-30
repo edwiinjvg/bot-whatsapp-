@@ -54,26 +54,25 @@ async function handler(sock, msg, args, { user, command, reply }) {
       user.age = age
       user.id = generateID()
 
+      user.coins = user.coins || 0
+      user.diamonds = user.diamonds || 0
+
       if (firstTime) {
         user.coins += 500
-        user.diamonds = (user.diamonds || 0) + 5
+        user.diamonds += 5
         user.hasRegisteredBefore = true
       }
 
       const pfp = await getProfilePic()
 
-      // decidir imagen
-      const imagePayload = pfp
-        ? { url: pfp }
-        : fs.existsSync(DEFAULT_PFP)
-          ? { url: DEFAULT_PFP }
-          : null
+      let imagePayload
+      if (pfp) {
+        imagePayload = { url: pfp }
+      } else if (fs.existsSync(DEFAULT_PFP)) {
+        imagePayload = fs.readFileSync(DEFAULT_PFP)
+      }
 
-      return sock.sendMessage(
-        jid,
-        {
-          image: imagePayload || undefined,
-          text:
+      const caption =
 `_*REGISTRO EXITOSO*_ ✅
 
 - _Nombre: ${nameRaw}_
@@ -85,7 +84,12 @@ ${firstTime
   : 'Ya habías reclamado la recompensa antes'}
 
 _Usa .myid si se te olvida el ID_`
-        },
+
+      return sock.sendMessage(
+        jid,
+        imagePayload
+          ? { image: imagePayload, caption }
+          : { text: caption },
         { quoted: msg }
       )
     }
