@@ -1,55 +1,39 @@
 const crypto = require('crypto')
 
-async function handler(sock, msg, args, { user, command }) {
-
+async function handler(sock, msg, args, { user, command, reply }) {
   const jid = msg.key.remoteJid
+  const jidUser = msg.key.participant || msg.key.remoteJid
 
-  const generateID = () => crypto.randomBytes(4).toString('hex')
+  const generateID = () => crypto.randomBytes(6).toString('hex')
 
   const getProfilePic = async () => {
     try {
-      return await sock.profilePictureUrl(
-        msg.key.participant || msg.key.remoteJid,
-        'image'
-      )
+      return await sock.profilePictureUrl(jidUser, 'image')
     } catch {
       return null
     }
   }
 
-  /* ======================
-     REGISTRO
-  ====================== */
+  // REGISTRO
   if (/^(reg|register|registrar)$/i.test(command)) {
-
-    if (user.registered) {
-      return sock.sendMessage(
-        jid,
-        { text: '_Ya estás registrado, deja la joda 😑_' },
-        { quoted: msg }
-      )
-    }
+    if (user.registered)
+      return reply('_Ya estás registrado gei_')
 
     const text = args.join(' ').trim()
-    if (!text || !text.includes('|')) {
-      return sock.sendMessage(
-        jid,
-        { text: `_Usa .${command} TuNombre | Edad_` },
-        { quoted: msg }
-      )
-    }
+    if (!text || !text.includes('|'))
+      return reply(`_Usa .${command} <nombre | <edad> para registrarte._`)
 
     const [nameRaw, ageRaw] = text.split('|').map(v => v.trim())
-    const age = parseInt(ageRaw)
+    const age = Number(ageRaw)
 
     if (!nameRaw)
-      return sock.sendMessage(jid, { text: '_El nombre no puede ir vacío_' }, { quoted: msg })
+      return reply('_El nombre no puede ir vacío._')
 
-    if (nameRaw.length > 25)
-      return sock.sendMessage(jid, { text: '_Ese nombre está muy largo_' }, { quoted: msg })
+    if (nameRaw.length > 10)
+      return reply('_Ese nombre está muy largo._')
 
-    if (!age || age < 10 || age > 90)
-      return sock.sendMessage(jid, { text: '_Esa edad no cuadra, man_' }, { quoted: msg })
+    if (!Number.isInteger(age) || age < 12 || age > 30)
+      return reply('_Ponte una edad seria, imbécil._')
 
     const firstTime = !user.hasRegisteredBefore
 
@@ -73,9 +57,9 @@ async function handler(sock, msg, args, { user, command }) {
         text:
 `_*REGISTRO EXITOSO*_ ✅
 
-Nombre: ${nameRaw}
-Edad: ${age}
-ID: ${user.id}
+- _Nombre: ${nameRaw}_
+- _Edad: ${age}_
+- _ID: ${user.id}_
 
 ${firstTime
   ? 'Recompensa:\n+500 monedas 🪙\n+5 diamantes 💎'
@@ -87,70 +71,35 @@ _Usa .myid si se te olvida el ID_`
     )
   }
 
-  /* ======================
-     VER ID
-  ====================== */
+  // VER ID
   if (/^(id|myid)$/i.test(command)) {
+    if (!user.registered || !user.id)
+      return reply('_No estás registrado todavía, animal._')
 
-    if (!user.registered || !user.id) {
-      return sock.sendMessage(
-        jid,
-        { text: '_No estás registrado todavía, animal_' },
-        { quoted: msg }
-      )
-    }
-
-    return sock.sendMessage(
-      jid,
-      { text: `_Tu ID es: *${user.id}*\nGuárdalo bien_` },
-      { quoted: msg }
-    )
+    return reply(`_Tu ID es: *${user.id}*, guárdalo bien._`)
   }
 
-  /* ======================
-     ANULAR REGISTRO
-  ====================== */
+  // ANULAR REGISTRO
   if (/^(unreg|unregister|anular)$/i.test(command)) {
-
-    if (!user.registered) {
-      return sock.sendMessage(
-        jid,
-        { text: '_Tú ni estás registrado, qué vas a anular XD_' },
-        { quoted: msg }
-      )
-    }
+    if (!user.registered)
+      return reply('_Tú ni estás registrado, qué vas a anular? XD_')
 
     const inputID = args[0]
-    if (!inputID) {
-      return sock.sendMessage(
-        jid,
-        { text: `_Usa .${command} TuID_` },
-        { quoted: msg }
-      )
-    }
+    if (!inputID)
+      return reply(`_Usa .${command} <ID> para anular tu registro._`)
 
-    if (inputID !== user.id) {
-      return sock.sendMessage(
-        jid,
-        { text: '_Ese ID no coincide, pilas_' },
-        { quoted: msg }
-      )
-    }
+    if (inputID !== user.id)
+      return reply('_Ese no es tu ID, bobo  hijueputa_')
 
     user.registered = false
     user.name = null
     user.age = null
     user.id = null
 
-    return sock.sendMessage(
-      jid,
-      { text: '_Registro anulado. Te saliste del sistema 👋_' },
-      { quoted: msg }
-    )
+    return reply('_Registro anulado._ ✅')
   }
 }
 
 handler.command = /^(reg|register|registrar|unreg|unregister|anular|id|myid)$/i
-handler.exp = 0
 
 module.exports = handler
