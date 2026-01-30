@@ -49,6 +49,7 @@ const handler = async (sock, msg, args, { user, reply }) => {
 `- _*PERFIL DE USUARIO*_ 👤
 
 - _*Nombre:* ${targetUser.name || 'Sin registrar'} 👤_
+- _*Edad:* ${targetUser.age ?? 'N/A'} 🎂_
 - _*Registrado:* ${targetUser.registered ? 'Sí' : 'No'} 📝_
 - _*ID:* ${targetUser.id || 'N/A'} 🆔_
 - _*Monedas:* ${targetUser.coins} 🪙_
