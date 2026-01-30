@@ -1,6 +1,9 @@
 const crypto = require('crypto')
+const path = require('path')
+const fs = require('fs')
 
-const DEFAULT_PFP = 'https://i.imgur.com/8RKXAIV.png'
+// imagen por defecto LOCAL
+const DEFAULT_PFP = path.join(process.cwd(), 'media', 'user.jpg')
 
 async function handler(sock, msg, args, { user, command, reply }) {
   const jid = msg.key.remoteJid
@@ -59,10 +62,17 @@ async function handler(sock, msg, args, { user, command, reply }) {
 
       const pfp = await getProfilePic()
 
+      // decidir imagen
+      const imagePayload = pfp
+        ? { url: pfp }
+        : fs.existsSync(DEFAULT_PFP)
+          ? { url: DEFAULT_PFP }
+          : null
+
       return sock.sendMessage(
         jid,
         {
-          image: { url: pfp || DEFAULT_PFP },
+          image: imagePayload || undefined,
           text:
 `_*REGISTRO EXITOSO*_ ✅
 
@@ -88,7 +98,6 @@ _Usa .myid si se te olvida el ID_`
       if (!user.registered || !user.id)
         return reply('_No estás registrado todavía, animal._')
 
-      // SOLO EL ID PA COPIAR
       return reply(user.id)
     }
 
