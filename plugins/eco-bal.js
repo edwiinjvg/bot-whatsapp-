@@ -19,7 +19,7 @@ const handler = async (sock, msg, args, { user, reply }) => {
   }
 
   const text = `
-- _*BALANCE ACTUAL:*_ 💰
+- _*BALANCE ACTUAL*_ 💰
 - _*Usuario:* ${targetUser.name}_
 - _*Monedas:* ${targetUser.coins} 🪙_
 - _*Diamantes:* ${targetUser.diamonds} 💎_
