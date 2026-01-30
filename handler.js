@@ -19,7 +19,10 @@ module.exports = async function handler(sock, msg) {
 
     const from = msg.key.remoteJid
     const isGroup = from.endsWith('@g.us')
-    const sender = isGroup ? msg.key.participant : from
+    let sender = isGroup ? msg.key.participant : from
+
+// NORMALIZAR JID (CLAVE)
+sender = sender.replace(/@c\.us$/, '@s.whatsapp.net')
     const isFromMe = msg.key.fromMe
     const botJid = sock.user.id
 
