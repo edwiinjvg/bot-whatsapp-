@@ -7,13 +7,36 @@ const DEFAULT_PFP = path.join(process.cwd(), 'media', 'user.jpg')
 const handler = async (sock, msg, args, { user, reply }) => {
 
   const jidChat = msg.key.remoteJid
-  const isGroup = jidChat.endsWith('@g.us')
 
-  const jidUser = msg.key.participant
+  // ======================
+  // DETERMINAR USUARIO OBJETIVO
+  // ======================
+  let targetJid = msg.key.participant // por defecto: el que ejecuta
 
+  const context = msg.message?.extendedTextMessage?.contextInfo
+
+  // si responde un mensaje
+  if (context?.participant) {
+    targetJid = context.participant
+  }
+
+  // si menciona a alguien
+  if (context?.mentionedJid?.length) {
+    targetJid = context.mentionedJid[0]
+  }
+
+  const targetUser = global.db.data.users[targetJid]
+
+  if (!targetUser) {
+    return reply('Ese man no existe en la base de datos 💀')
+  }
+
+  // ======================
+  // FOTO DE PERFIL
+  // ======================
   const getProfilePic = async () => {
     try {
-      return await sock.profilePictureUrl(jidUser, 'image')
+      return await sock.profilePictureUrl(targetJid, 'image')
     } catch {
       return null
     }
@@ -25,17 +48,14 @@ const handler = async (sock, msg, args, { user, reply }) => {
   const caption =
 `- _*PERFIL DE USUARIO*_ 👤
 
-- _*Nombre:* ${user.name || 'Sin registrar'} 👤_
-- _*ID:* ${user.id || 'N/A'} 🆔_
-- _*Registrado:* ${user.registered ? 'Sí' : 'No'} 📝_
-- _*Nivel:* ${user.level} ⭐_
-- _*Exp:* ${user.exp}/${user.level * 100} ✨_
-- _*Monedas:* ${user.coins} 🪙_
-- _*Diamantes:* ${user.diamonds} 💎_`
+- _*Nombre:* ${targetUser.name || 'Sin registrar'} 👤_
+- _*Registrado:* ${targetUser.registered ? 'Sí' : 'No'} 📝_
+- _*ID:* ${targetUser.id || 'N/A'} 🆔_
+- _*Monedas:* ${targetUser.coins} 🪙_
+- _*Diamantes:* ${targetUser.diamonds} 💎_
+- _*Exp:* ${targetUser.exp}/${targetUser.level * 100} ✨_
+- _*Nivel:* ${targetUser.level} ⭐_`
 
-  // ======================
-  // FOTO DE PERFIL
-  // ======================
   const pfp = await getProfilePic()
 
   let imagePayload = null
