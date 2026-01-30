@@ -23,9 +23,8 @@ const handler = async (sock, msg, args, { user, reply }) => {
 - _*Usuario:* ${targetUser.name}_
 - _*Monedas:* ${targetUser.coins} 🪙_
 - _*Diamantes:* ${targetUser.diamonds} 💎_
-- _*Nivel:* ${targetUser.level} ⭐_
 - _*Exp:* ${targetUser.exp}/${targetUser.level * 100} ✨_
-`.trim()
+- _*Nivel:* ${targetUser.level} ⭐_`.trim()
 
   await reply(text)
 }
