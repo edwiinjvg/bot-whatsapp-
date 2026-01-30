@@ -6,8 +6,17 @@ const fs = require('fs')
 const DEFAULT_PFP = path.join(process.cwd(), 'media', 'user.jpg')
 
 async function handler(sock, msg, args, { user, command, reply }) {
-  const jid = msg.key.remoteJid
-  const jidUser = msg.key.participant || msg.key.remoteJid
+
+  // ======================
+  // IDENTIDAD CORRECTA
+  // ======================
+  const jidChat = msg.key.remoteJid
+  const isGroup = jidChat.endsWith('@g.us')
+
+  // USUARIO REAL
+  const jidUser = isGroup
+    ? msg.key.participant
+    : jidChat
 
   const generateID = () => crypto.randomBytes(6).toString('hex')
 
@@ -27,6 +36,7 @@ async function handler(sock, msg, args, { user, command, reply }) {
     case 'reg':
     case 'register':
     case 'registrar': {
+
       if (user.registered)
         return reply('_Ya estás registrado gei_')
 
@@ -54,8 +64,8 @@ async function handler(sock, msg, args, { user, command, reply }) {
       user.age = age
       user.id = generateID()
 
-      user.coins = user.coins || 0
-      user.diamonds = user.diamonds || 0
+      user.coins ||= 0
+      user.diamonds ||= 0
 
       if (firstTime) {
         user.coins += 500
@@ -63,9 +73,13 @@ async function handler(sock, msg, args, { user, command, reply }) {
         user.hasRegisteredBefore = true
       }
 
+      // ======================
+      // FOTO DE PERFIL
+      // ======================
       const pfp = await getProfilePic()
 
-      let imagePayload
+      let imagePayload = null
+
       if (pfp) {
         imagePayload = { url: pfp }
       } else if (fs.existsSync(DEFAULT_PFP)) {
@@ -86,7 +100,7 @@ ${firstTime
 _Usa .myid si se te olvida el ID_`
 
       return sock.sendMessage(
-        jid,
+        jidChat,
         imagePayload
           ? { image: imagePayload, caption }
           : { text: caption },
@@ -99,6 +113,7 @@ _Usa .myid si se te olvida el ID_`
     // ======================
     case 'id':
     case 'myid': {
+
       if (!user.registered || !user.id)
         return reply('_No estás registrado todavía, animal._')
 
@@ -111,6 +126,7 @@ _Usa .myid si se te olvida el ID_`
     case 'unreg':
     case 'unregister':
     case 'anular': {
+
       if (!user.registered)
         return reply('_Tú ni estás registrado, qué vas a anular? XD_')
 
