@@ -25,9 +25,9 @@ const handler = async (sock, msg, args, { user, reply }) => {
   const caption =
 `- _*PERFIL DE USUARIO*_ 👤
 
-- _*Nombre:* ${user.name || 'Sin registrar'} 📛_
+- _*Nombre:* ${user.name || 'Sin registrar'} 👤_
 - _*ID:* ${user.id || 'N/A'} 🆔_
-- _*Registrado:* ${user.registered ? 'Sí' : 'No'} 📌_
+- _*Registrado:* ${user.registered ? 'Sí' : 'No'} 📝_
 - _*Nivel:* ${user.level} ⭐_
 - _*Exp:* ${user.exp}/${user.level * 100} ✨_
 - _*Monedas:* ${user.coins} 🪙_
