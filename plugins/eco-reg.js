@@ -8,15 +8,10 @@ const DEFAULT_PFP = path.join(process.cwd(), 'media', 'user.jpg')
 async function handler(sock, msg, args, { user, command, reply }) {
 
   // ======================
-  // IDENTIDAD CORRECTA
+  // CONTEXTO (SOLO GRUPOS)
   // ======================
   const jidChat = msg.key.remoteJid
-  const isGroup = jidChat.endsWith('@g.us')
-
-  // USUARIO REAL
-  const jidUser = isGroup
-    ? msg.key.participant
-    : jidChat
+  const jidUser = msg.key.participant
 
   const generateID = () => crypto.randomBytes(6).toString('hex')
 
@@ -38,11 +33,11 @@ async function handler(sock, msg, args, { user, command, reply }) {
     case 'registrar': {
 
       if (user.registered)
-        return reply('_Ya estás registrado gei_')
+        return reply('_Ya estás registrado, gei_')
 
       const text = args.join(' ').trim()
       if (!text)
-        return reply(`_Usa .${command} <nombre> <edad>_`)
+        return reply(`_Usa *.${command} <nombre> <edad>* para registrarte._`)
 
       const parts = text.split(/\s+/)
       const age = Number(parts.pop())
@@ -79,7 +74,6 @@ async function handler(sock, msg, args, { user, command, reply }) {
       const pfp = await getProfilePic()
 
       let imagePayload = null
-
       if (pfp) {
         imagePayload = { url: pfp }
       } else if (fs.existsSync(DEFAULT_PFP)) {
@@ -89,15 +83,15 @@ async function handler(sock, msg, args, { user, command, reply }) {
       const caption =
 `_*REGISTRO EXITOSO*_ ✅
 
-- _Nombre: ${nameRaw}_
-- _Edad: ${age}_
-- _ID: ${user.id}_
+- _*Nombre:* ${nameRaw}_ 👤
+- _*Edad:* ${age}_ ⏳
+- _*ID:* ${user.id}_ 🆔
 
 ${firstTime
-  ? 'Recompensa:\n+500 monedas 🪙\n+5 diamantes 💎'
-  : 'Ya habías reclamado la recompensa antes'}
+  ? '_*RECOMPENSA:*_ 🎁\n- _*+500* monedas_ 🪙\n- _*+5* diamantes 💎_'
+  : '_Ya reclamaste tu recompensa antes._'}
 
-_Usa .myid si se te olvida el ID_`
+_Usa *.id* para ver tu ID_`
 
       return sock.sendMessage(
         jidChat,
@@ -132,7 +126,7 @@ _Usa .myid si se te olvida el ID_`
 
       const inputID = args[0]
       if (!inputID)
-        return reply(`_Usa .${command} <ID> para anular tu registro._`)
+        return reply(`_Usa *.${command} <ID>* para anular tu registro._`)
 
       if (inputID !== user.id)
         return reply('_Ese no es tu ID, bobo hijueputa_')
@@ -142,10 +136,11 @@ _Usa .myid si se te olvida el ID_`
       user.age = null
       user.id = null
 
-      return reply('_Registro anulado._ ✅')
+      return reply('_Registro anulado, te fuiste del sistema._ 👏')
     }
   }
 }
 
 handler.command = /^(reg|register|registrar|unreg|unregister|anular|id|myid)$/i
+handler.group = true
 module.exports = handler
