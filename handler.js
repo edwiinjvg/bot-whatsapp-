@@ -8,6 +8,24 @@ const {
   initSettings
 } = require('./lib/database')
 
+// ======================
+// NORMALIZAR JID (CLAVE GLOBAL)
+// ======================
+function normalizeUserJid(msg) {
+  let jid = msg.key.participant || msg.key.remoteJid
+
+  // si por alguna razón viene el jid del grupo
+  if (jid.endsWith('@g.us')) {
+    jid = msg.key.participant
+  }
+
+  if (!jid) return null
+
+  return jid
+    .replace(/@c\.us$/, '@s.whatsapp.net')
+    .replace(/:\d+@/, '@')
+}
+
 module.exports = async function handler(sock, msg) {
   try {
     if (!msg.message) return
@@ -19,10 +37,10 @@ module.exports = async function handler(sock, msg) {
 
     const from = msg.key.remoteJid
     const isGroup = from.endsWith('@g.us')
-    let sender = isGroup ? msg.key.participant : from
 
-// NORMALIZAR JID (CLAVE)
-sender = sender.replace(/@c\.us$/, '@s.whatsapp.net')
+    const sender = normalizeUserJid(msg)
+    if (!sender) return
+
     const isFromMe = msg.key.fromMe
     const botJid = sock.user.id
 
@@ -60,7 +78,7 @@ sender = sender.replace(/@c\.us$/, '@s.whatsapp.net')
     const settings = global.db.data.settings[botJid]
 
     // ======================
-    // REPLY HELPER (PELADO)
+    // REPLY HELPER
     // ======================
     const reply = async (txt, extra = {}) => {
       return sock.sendMessage(
@@ -163,12 +181,12 @@ sender = sender.replace(/@c\.us$/, '@s.whatsapp.net')
     // EJECUTAR PLUGIN
     // ======================
     await plugin(sock, msg, args, {
-  user,
-  chat,
-  settings,
-  reply,
-  command // 👈 ESTA ES LA CLAVE
-})
+      user,
+      chat,
+      settings,
+      reply,
+      command
+    })
 
     saveDatabase()
   } catch (e) {
