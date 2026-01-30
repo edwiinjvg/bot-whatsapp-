@@ -160,11 +160,12 @@ module.exports = async function handler(sock, msg) {
     // EJECUTAR PLUGIN
     // ======================
     await plugin(sock, msg, args, {
-      user,
-      chat,
-      settings,
-      reply
-    })
+  user,
+  chat,
+  settings,
+  reply,
+  command // 👈 ESTA ES LA CLAVE
+})
 
     saveDatabase()
   } catch (e) {
