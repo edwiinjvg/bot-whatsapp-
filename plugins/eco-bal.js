@@ -1,19 +1,13 @@
 const handler = async (sock, msg, args, { user, reply }) => {
 
-  // ======================
-  // DETERMINAR OBJETIVO
-  // ======================
   let targetJid
 
-  // 1️⃣ Si responde a alguien
   if (msg.message?.extendedTextMessage?.contextInfo?.participant) {
     targetJid = msg.message.extendedTextMessage.contextInfo.participant
 
-  // 2️⃣ Si menciona a alguien
   } else if (msg.message?.extendedTextMessage?.contextInfo?.mentionedJid?.length) {
     targetJid = msg.message.extendedTextMessage.contextInfo.mentionedJid[0]
 
-  // 3️⃣ Si no, es él mismo
   } else {
     targetJid = msg.key.participant || msg.key.remoteJid
   }
@@ -25,7 +19,7 @@ const handler = async (sock, msg, args, { user, reply }) => {
   }
 
   const text = `
-- _*BALANCE*_ 💰
+- _*BALANCE ACTUAL:*_ 💰
 - _*Usuario:* ${targetUser.name}_
 - _*Monedas:* ${targetUser.coins} 🪙_
 - _*Diamantes:* ${targetUser.diamonds} 💎_
