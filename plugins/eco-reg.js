@@ -1,5 +1,7 @@
 const crypto = require('crypto')
 
+const DEFAULT_PFP = 'https://i.imgur.com/8RKXAIV.png'
+
 async function handler(sock, msg, args, { user, command, reply }) {
   const jid = msg.key.remoteJid
   const jidUser = msg.key.participant || msg.key.remoteJid
@@ -26,11 +28,12 @@ async function handler(sock, msg, args, { user, command, reply }) {
         return reply('_Ya estás registrado gei_')
 
       const text = args.join(' ').trim()
-      if (!text || !text.includes('|'))
-        return reply(`_Usa .${command} <nombre | edad> para registrarte._`)
+      if (!text)
+        return reply(`_Usa .${command} <nombre> <edad>_`)
 
-      const [nameRaw, ageRaw] = text.split('|').map(v => v.trim())
-      const age = Number(ageRaw)
+      const parts = text.split(/\s+/)
+      const age = Number(parts.pop())
+      const nameRaw = parts.join(' ')
 
       if (!nameRaw)
         return reply('_El nombre no puede ir vacío._')
@@ -59,7 +62,7 @@ async function handler(sock, msg, args, { user, command, reply }) {
       return sock.sendMessage(
         jid,
         {
-          image: pfp ? { url: pfp } : undefined,
+          image: { url: pfp || DEFAULT_PFP },
           text:
 `_*REGISTRO EXITOSO*_ ✅
 
@@ -85,7 +88,8 @@ _Usa .myid si se te olvida el ID_`
       if (!user.registered || !user.id)
         return reply('_No estás registrado todavía, animal._')
 
-      return reply(`_Tu ID es: *${user.id}*, guárdalo bien._`)
+      // SOLO EL ID PA COPIAR
+      return reply(user.id)
     }
 
     // ======================
