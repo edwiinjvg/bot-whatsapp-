@@ -82,16 +82,12 @@ async function handler(sock, msg, args, { user, command, reply }) {
 
       const caption =
 `_*REGISTRO EXITOSO*_ ✅
-
 - _*Nombre:* ${nameRaw}_ 👤
 - _*Edad:* ${age}_ ⏳
 - _*ID:* ${user.id}_ 🆔
-
 ${firstTime
   ? '_*RECOMPENSA:*_ 🎁\n- _*+500* monedas_ 🪙\n- _*+5* diamantes 💎_'
-  : '_Ya reclamaste tu recompensa antes._'}
-
-_Usa *.id* para ver tu ID_`
+  : '_Ya reclamaste tu recompensa antes._'}`
 
       return sock.sendMessage(
         jidChat,
