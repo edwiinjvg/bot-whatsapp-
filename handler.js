@@ -14,7 +14,6 @@ const {
 function normalizeUserJid(msg) {
   let jid = msg.key.participant || msg.key.remoteJid
 
-  // si por alguna razón viene el jid del grupo
   if (jid.endsWith('@g.us')) {
     jid = msg.key.participant
   }
@@ -76,6 +75,35 @@ module.exports = async function handler(sock, msg) {
     const user = global.db.data.users[sender]
     const chat = global.db.data.chats[from]
     const settings = global.db.data.settings[botJid]
+
+    // ======================
+    // FLAGS DEFAULTS
+    // ======================
+
+    // global
+    if (typeof settings.autolevelup !== 'boolean') {
+      settings.autolevelup = true
+    }
+
+    // por grupo
+    const chatDefaults = {
+      antilink: false,
+      autosticker: false,
+      autoresponse: false,
+      autoreaction: false,
+      antidelete: false,
+      antiviewonce: false,
+      welcome: true,
+      detect: false,
+      nsfw: false,
+      simi: false
+    }
+
+    for (const key in chatDefaults) {
+      if (typeof chat[key] !== 'boolean') {
+        chat[key] = chatDefaults[key]
+      }
+    }
 
     // ======================
     // REPLY HELPER
@@ -169,12 +197,15 @@ module.exports = async function handler(sock, msg) {
     // EXP / LEVEL
     // ======================
     user.exp += typeof plugin.exp === 'number' ? plugin.exp : 5
-    const needExp = 100 + (user.level ** 2 * 20)
 
-    if (user.exp >= needExp) {
-      user.level++
-      user.exp = 0
-      await reply(`🔥 Subiste a nivel ${user.level}`)
+    if (settings.autolevelup) {
+      const needExp = 100 + (user.level ** 2 * 20)
+
+      if (user.exp >= needExp) {
+        user.level++
+        user.exp = 0
+        await reply(`🔥 Subiste a nivel ${user.level}`)
+      }
     }
 
     // ======================
