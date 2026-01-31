@@ -13,16 +13,31 @@ const {
 // ======================
 function normalizeUserJid(msg) {
   let jid = msg.key.participant || msg.key.remoteJid
-
-  if (jid.endsWith('@g.us')) {
-    jid = msg.key.participant
-  }
-
+  if (jid.endsWith('@g.us')) jid = msg.key.participant
   if (!jid) return null
+  return jid.replace(/@c\.us$/, '@s.whatsapp.net').replace(/:\d+@/, '@')
+}
 
-  return jid
-    .replace(/@c\.us$/, '@s.whatsapp.net')
-    .replace(/:\d+@/, '@')
+// ======================
+// ROLES POR NIVEL
+// ======================
+const rolesByLevel = [
+  { level: 1, role: 'Novato' },
+  { level: 5, role: 'Aprendiz' },
+  { level: 10, role: 'Experto' },
+  { level: 20, role: 'Veterano' },
+  { level: 50, role: 'Leyenda' }
+]
+
+// ======================
+// VALORES INICIALES USUARIO
+// ======================
+const userDefaults = {
+  coins: 500,
+  diamonds: 5,
+  exp: 0,
+  level: 1,
+  role: 'Novato'
 }
 
 module.exports = async function handler(sock, msg) {
@@ -36,17 +51,78 @@ module.exports = async function handler(sock, msg) {
 
     const from = msg.key.remoteJid
     const isGroup = from.endsWith('@g.us')
-
     const sender = normalizeUserJid(msg)
     if (!sender) return
-
-    const isFromMe = msg.key.fromMe
     const botJid = sock.user.id
+    const isFromMe = msg.key.fromMe
 
     initSettings(botJid)
+    initUser(sender)
+    initChat(from)
 
-    if (isFromMe && !global.flags.selfReply) return
+    // ======================
+    // CARGAR USUARIO, CHAT, SETTINGS
+    // ======================
+    const user = global.db.data.users[sender]
+    const chat = global.db.data.chats[from]
+    const settings = global.db.data.settings[botJid]
 
+    // ======================
+    // INICIALIZAR VALORES DE USUARIO
+    // ======================
+    for (const key in userDefaults) {
+      if (user[key] === undefined || user[key] === null) user[key] = userDefaults[key]
+    }
+
+    // ======================
+    // FLAGS POR DEFECTO
+    // ======================
+    if (typeof settings.autolevelup !== 'boolean') settings.autolevelup = true
+
+    const chatDefaults = {
+      antilink: false,
+      autosticker: false,
+      autoaudio: false,
+      autoresponse: false,
+      autoreaction: false,
+      antidelete: false,
+      antiviewonce: false,
+      welcome: true,
+      detect: false,
+      nsfw: false,
+      simi: false,
+      antispam: false
+    }
+
+    for (const key in chatDefaults) {
+      if (typeof chat[key] !== 'boolean') chat[key] = chatDefaults[key]
+    }
+
+    // ======================
+    // ADMIN VALIDATIONS
+    // ======================
+    let isBotAdmin = false
+    let isUserAdmin = false
+    if (isGroup) {
+      const metadata = await sock.groupMetadata(from)
+      const participants = metadata.participants
+      isBotAdmin = participants.some(p => p.id === botJid && (p.admin || p.superAdmin))
+      isUserAdmin = participants.some(p => p.id === sender && (p.admin || p.superAdmin))
+    }
+
+    // ======================
+    // REPLY HELPER
+    // ======================
+    const reply = async (txt, extra = {}) => sock.sendMessage(from, { text: txt, ...extra }, { quoted: msg })
+
+    // ======================
+    // AUTOREAD
+    // ======================
+    if (settings.autoread) await sock.readMessages([msg.key])
+
+    // ======================
+    // EXTRAER COMANDO
+    // ======================
     const body =
       msg.message.conversation ||
       msg.message.extendedTextMessage?.text ||
@@ -55,9 +131,7 @@ module.exports = async function handler(sock, msg) {
       ''
 
     if (!body) return
-
     const text = body.trim()
-
     const prefix = global.config.prefixes.find(p => text.startsWith(p))
     if (!prefix) return
 
@@ -67,69 +141,9 @@ module.exports = async function handler(sock, msg) {
     console.log(`⚙️ CMD: ${command} | ${sender}`)
 
     // ======================
-    // INIT USER / CHAT
-    // ======================
-    initUser(sender)
-    initChat(from)
-
-    const user = global.db.data.users[sender]
-    const chat = global.db.data.chats[from]
-    const settings = global.db.data.settings[botJid]
-
-    // ======================
-    // FLAGS DEFAULTS
-    // ======================
-
-    // global
-    if (typeof settings.autolevelup !== 'boolean') {
-      settings.autolevelup = true
-    }
-
-    // por grupo
-    const chatDefaults = {
-      antilink: false,
-      autosticker: false,
-      autoresponse: false,
-      autoreaction: false,
-      antidelete: false,
-      antiviewonce: false,
-      welcome: true,
-      detect: false,
-      nsfw: false,
-      simi: false
-    }
-
-    for (const key in chatDefaults) {
-      if (typeof chat[key] !== 'boolean') {
-        chat[key] = chatDefaults[key]
-      }
-    }
-
-    // ======================
-    // REPLY HELPER
-    // ======================
-    const reply = async (txt, extra = {}) => {
-      return sock.sendMessage(
-        from,
-        { text: txt, ...extra },
-        { quoted: msg }
-      )
-    }
-
-    // ======================
-    // AUTOREAD
-    // ======================
-    if (settings.autoread) {
-      await sock.readMessages([msg.key])
-    }
-
-    // ======================
     // CARGAR PLUGINS
     // ======================
-    const pluginFiles = fs
-      .readdirSync(path.join(__dirname, 'plugins'))
-      .filter(file => file.endsWith('.js'))
-
+    const pluginFiles = fs.readdirSync(path.join(__dirname, 'plugins')).filter(file => file.endsWith('.js'))
     let plugin
     for (const file of pluginFiles) {
       const filePath = path.join(__dirname, 'plugins', file)
@@ -140,84 +154,73 @@ module.exports = async function handler(sock, msg) {
         break
       }
     }
-
     if (!plugin) return
 
     // ======================
-    // VALIDACIONES
+    // VALIDACIONES DEL PLUGIN
     // ======================
-    if (!isGroup && settings.antiprivate) {
-      if (!global.config.owner.includes(sender.split('@')[0])) return
-    }
-
-    if (plugin.registered && !user.registered) {
-      return reply('Primero regístrate con *.register*, no seas bruto 😑')
-    }
-
-    if (plugin.group && !isGroup) {
-      return reply('Este comando es solo pa grupos 🙄')
-    }
-
-    if (plugin.owner && !global.config.owner.includes(sender.split('@')[0])) {
-      return reply('Esto es solo pa mi papá 🤨')
-    }
-
-    if (plugin.nsfw && !chat.nsfw) {
-      return reply('El nsfw está apagado aquí 💤')
-    }
+    if (!isGroup && settings.antiprivate && !global.config.owner.includes(sender.split('@')[0])) return
+    if (plugin.registered && !user.registered) return reply('Primero regístrate con *.register*, no seas bruto 😑')
+    if (plugin.group && !isGroup) return reply('Este comando es solo pa grupos 🙄')
+    if (plugin.owner && !global.config.owner.includes(sender.split('@')[0])) return reply('Esto es solo pa mi papá 🤨')
+    if (plugin.nsfw && !chat.nsfw) return reply('El nsfw está apagado aquí 💤')
+    if (plugin.groupAdmin && !isUserAdmin) return reply('Solo admins pueden usar este comando 😎')
+    if (plugin.botAdmin && !isBotAdmin) return reply('Necesito ser admin pa poder ejecutar esto 😑')
 
     // ======================
     // ECONOMÍA
     // ======================
-    if (plugin.coins && user.coins < plugin.coins) {
-      return reply(`Te faltan monedas 🪙 (${plugin.coins})`)
-    }
-    if (plugin.diamonds && user.diamonds < plugin.diamonds) {
-      return reply(`Te faltan diamantes 💎 (${plugin.diamonds})`)
-    }
-
+    if (plugin.coins && user.coins < plugin.coins) return reply(`Te faltan monedas 🪙 (${plugin.coins})`)
+    if (plugin.diamonds && user.diamonds < plugin.diamonds) return reply(`Te faltan diamantes 💎 (${plugin.diamonds})`)
     if (plugin.coins) user.coins -= plugin.coins
     if (plugin.diamonds) user.diamonds -= plugin.diamonds
+
+    // ======================
+    // EXP / LEVEL (AUTOLEVELUP + ROLES)
+    // ======================
+    user.exp += typeof plugin.exp === 'number' ? plugin.exp : 5
+    if (settings.autolevelup) {
+      const needExp = 100 + user.level ** 2 * 20
+      if (user.exp >= needExp) {
+        user.level++
+        user.exp = 0
+        await reply(`🔥 Subiste a nivel ${user.level}`)
+
+        const newRole = rolesByLevel.filter(r => user.level >= r.level).pop()
+        if (newRole && user.role !== newRole.role) {
+          user.role = newRole.role
+          await reply(`🎉 Felicidades! Has obtenido el rol: ${newRole.role}`)
+        }
+      }
+    }
 
     // ======================
     // COOLDOWNS
     // ======================
     const now = Date.now()
-
     if (plugin.cooldown) {
       const last = user[plugin.cooldown.key] || 0
       const diff = plugin.cooldown.time - (now - last)
-      if (diff > 0) {
-        return reply(`Espera ${Math.ceil(diff / 1000)}s pa usar este comando otra vez 😴`)
-      }
+      if (diff > 0) return reply(`Espera ${Math.ceil(diff / 1000)}s pa usar este comando otra vez 😴`)
       user[plugin.cooldown.key] = now
-    }
-
-    // ======================
-    // EXP / LEVEL
-    // ======================
-    user.exp += typeof plugin.exp === 'number' ? plugin.exp : 5
-
-    if (settings.autolevelup) {
-      const needExp = 100 + (user.level ** 2 * 20)
-
-      if (user.exp >= needExp) {
-        user.level++
-        user.exp = 0
-        await reply(`🔥 Subiste a nivel ${user.level}`)
-      }
     }
 
     // ======================
     // EJECUTAR PLUGIN
     // ======================
-    await plugin(sock, msg, args, {
-      user,
-      chat,
-      settings,
-      reply,
-      command
-    })
+    await plugin(sock, msg, args, { user, chat, settings, reply, command })
+
+    // ======================
+    // AUTOREACTION POR PORCENTAJE
+    // ======================
+    const emojis = ['😀','😃','😄','😁','😆','🥹','😅','😂','🤣','🥲','☺️','😊','😇','🙂','🙃','😉','😌','😍','🥰','😘','😗','😙','😚','😋','😛','😝','😜','🤪','🤨','🧐','🤓','😎','🥸','🤩','🥳','😏','😒','😞','😔','😟','😕','🙁','☹️','😣','😖','😫','😩','🥺','😢','😭','😤','😠','😡','🤬','🤯','😳','🥵','🥶','😶‍🌫️','😱','😨','😰','😥','😓','🤗','🤔','🫣','🤭','🫢','🫡','🤫','🫠','🤥','😶','🫥','😐','🫤','😑','🫨','😬','🙄','😯','😦','😧','😮','😲','🥱','😴','🤤','😪','😮‍💨','😵','😵‍💫','🤐','🥴','🤢','🤮','🤧','😷','🤒','🤕','🤑','🤠','😈','👿','👺','🤡','💩','👻','😺','😸','😹','😻','😼','😽','🙀','😿','😾','🫶','👍','✌️','🙏','🫵','🤏','🤌','☝️','🖕','🙏','🫵','🫂','🐱','🤹‍♀️','🤹‍♂️','🗿','✨','⚡','🔥','🌈','🩷','❤️','🧡','💛','💚','🩵','💙','💜','🖤','🩶','🤍','🤎','💔','❤️‍🔥','❤️‍🩹','❣️','💕','💞','💓','💗','💖','💘','💝','🏳️‍🌈','👊','👀','💋','🫰','💅','👑','🐣','🐤','🏳️‍⚧️','✅']
+
+    if (chat.autoreaction && !msg.key.fromMe) {
+      if (Math.random() < 0.1) { // 10% de probabilidad
+        const emot = emojis[Math.floor(Math.random() * emojis.length)]
+        await sock.sendMessage(from, { react: { text: emot, key: msg.key } })
+      }
+    }
 
     saveDatabase()
   } catch (e) {
