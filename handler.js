@@ -84,7 +84,7 @@ module.exports = async function handler(sock, msg) {
       autosticker: false,
       autoaudio: false,
       autoresponse: false,
-      autoreaction: false,
+      autoreaction: true,
       antidelete: false,
       antiviewonce: false,
       welcome: true,
