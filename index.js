@@ -61,7 +61,7 @@ async function startBot() {
   // ANTIDELETE
   // ======================
   sock.ev.on('messages.update', async (updates) => {
-    await antideleteEvent(sock, updates)
+    await antideleteEvent.antideleteEvent(sock, updates)
   })
 
   // ======================
