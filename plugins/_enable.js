@@ -1,15 +1,4 @@
-const validFeatures = [
-  'welcome',
-  'detect',
-  'nsfw',
-  'antidelete',
-  'antiviewonce',
-  'antilink',
-  'autosticker',
-  'autoresponse',
-  'autoreaction',
-  'autolevelup'
-]
+const validFeatures = require('../lib/features')
 
 const handler = async (sock, msg, args, { chat, reply, command }) => {
   const feature = args[0]
