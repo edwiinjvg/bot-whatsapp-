@@ -7,22 +7,35 @@ const {
 const P = require('pino')
 const readline = require('readline')
 
+// ======================
 // CARGAR CONFIG (GLOBALS)
+// ======================
 require('./config')
 
-// 👉 DATABASE
+// ======================
+// DATABASE
+// ======================
 const {
   loadDatabase,
   saveDatabase,
   initSettings
 } = require('./lib/database')
 
-// HANDLER (MENSAJES / COMANDOS)
+// ======================
+// HANDLER (COMANDOS)
+// ======================
 const handler = require('./handler')
 
-// 👉 EVENTOS
+// ======================
+// EVENTOS
+// ======================
 const welcomeEvent = require('./lib/events/welcome')
 const antideleteEvent = require('./lib/events/antidelete')
+
+// ======================
+// STORE (OBLIGATORIO)
+// ======================
+const { saveMessage } = require('./lib/store')
 
 async function startBot() {
   // 🔹 Cargar DB
@@ -46,12 +59,15 @@ async function startBot() {
   }, 30_000)
 
   // ======================
-  // MENSAJES
+  // MENSAJES (GUARDAR + HANDLER)
   // ======================
   sock.ev.on('messages.upsert', async ({ messages, type }) => {
     if (type !== 'notify') return
     const msg = messages[0]
     if (!msg) return
+
+    // 👉 GUARDAR MENSAJE (CLAVE PARA ANTIDELETE)
+    saveMessage(msg)
 
     await handler(sock, msg)
   })
@@ -64,7 +80,7 @@ async function startBot() {
   })
 
   // ======================
-  //      ANTIDELETE
+  // ANTIDELETE (REAL)
   // ======================
   sock.ev.on('messages.update', async (updates) => {
     await antideleteEvent(sock, updates)
