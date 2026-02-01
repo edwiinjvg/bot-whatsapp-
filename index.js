@@ -7,38 +7,20 @@ const {
 const P = require('pino')
 const readline = require('readline')
 
-// ======================
-// CARGAR CONFIG (GLOBALS)
-// ======================
+// CONFIG
 require('./config')
 
-// ======================
-// DATABASE
-// ======================
-const {
-  loadDatabase,
-  saveDatabase,
-  initSettings
-} = require('./lib/database')
+// DB
+const { loadDatabase, saveDatabase, initSettings } = require('./lib/database')
 
-// ======================
-// HANDLER (COMANDOS)
-// ======================
+// HANDLER
 const handler = require('./handler')
 
-// ======================
 // EVENTOS
-// ======================
 const welcomeEvent = require('./lib/events/welcome')
 const antideleteEvent = require('./lib/events/antidelete')
 
-// ======================
-// STORE (OBLIGATORIO)
-// ======================
-const { saveMessage } = require('./lib/store')
-
 async function startBot() {
-  // 🔹 Cargar DB
   loadDatabase()
 
   const { state, saveCreds } = await useMultiFileAuthState('./auth')
@@ -48,27 +30,23 @@ async function startBot() {
     logger: P({ level: 'silent' })
   })
 
-  // 🔹 Inicializar settings del bot
   initSettings(sock.user?.id || 'bot')
-
   sock.ev.on('creds.update', saveCreds)
 
-  // 🔹 Guardar DB cada 30s
-  setInterval(() => {
-    saveDatabase()
-  }, 30_000)
+  setInterval(() => saveDatabase(), 30_000)
 
   // ======================
-  // MENSAJES (GUARDAR + HANDLER)
+  // MENSAJES
   // ======================
   sock.ev.on('messages.upsert', async ({ messages, type }) => {
     if (type !== 'notify') return
     const msg = messages[0]
     if (!msg) return
 
-    // 👉 GUARDAR MENSAJE (CLAVE PARA ANTIDELETE)
-    saveMessage(msg)
+    // Guardar mensaje para antidelete
+    antideleteEvent.storeMessage(msg)
 
+    // Pasar al handler
     await handler(sock, msg)
   })
 
@@ -80,7 +58,7 @@ async function startBot() {
   })
 
   // ======================
-  // ANTIDELETE (REAL)
+  // ANTIDELETE
   // ======================
   sock.ev.on('messages.update', async (updates) => {
     await antideleteEvent(sock, updates)
@@ -115,7 +93,6 @@ async function startBot() {
       const shouldReconnect =
         lastDisconnect?.error?.output?.statusCode !==
         DisconnectReason.loggedOut
-
       if (shouldReconnect) startBot()
     }
 
