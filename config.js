@@ -24,15 +24,8 @@ global.sticker = {
   author: 'By Edwin'
 }
 
-// --- FLAGS ---
-global.flags = {
-  selfReply: true,   // permitir que el bot se responda
-  antiLoop: true    // evitar loops/spam
-}
-
 module.exports = {
   config: global.config,
   messages: global.messages,
   sticker: global.sticker,
-  flags: global.flags
 }
