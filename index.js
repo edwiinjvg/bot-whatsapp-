@@ -17,8 +17,11 @@ const {
   initSettings
 } = require('./lib/database')
 
-// HANDLER
+// HANDLER (MENSAJES / COMANDOS)
 const handler = require('./handler')
+
+// 👉 EVENTOS
+const welcomeEvent = require('./lib/events/welcome')
 
 async function startBot() {
   // 🔹 Cargar DB
@@ -41,7 +44,9 @@ async function startBot() {
     saveDatabase()
   }, 30_000)
 
+  // ======================
   // MENSAJES
+  // ======================
   sock.ev.on('messages.upsert', async ({ messages, type }) => {
     if (type !== 'notify') return
     const msg = messages[0]
@@ -50,7 +55,16 @@ async function startBot() {
     await handler(sock, msg)
   })
 
+  // ======================
+  // WELCOME / DESPEDIDAS
+  // ======================
+  sock.ev.on('group-participants.update', async (update) => {
+    await welcomeEvent(sock, update)
+  })
+
+  // ======================
   // VINCULACIÓN POR CÓDIGO
+  // ======================
   if (!state.creds.registered) {
     const rl = readline.createInterface({
       input: process.stdin,
@@ -67,7 +81,9 @@ async function startBot() {
     )
   }
 
+  // ======================
   // CONEXIÓN
+  // ======================
   sock.ev.on('connection.update', (update) => {
     const { connection, lastDisconnect } = update
 
