@@ -22,6 +22,7 @@ const handler = require('./handler')
 
 // 👉 EVENTOS
 const welcomeEvent = require('./lib/events/welcome')
+const antideleteEvent = require('./lib/events/antidelete')
 
 async function startBot() {
   // 🔹 Cargar DB
@@ -60,6 +61,13 @@ async function startBot() {
   // ======================
   sock.ev.on('group-participants.update', async (update) => {
     await welcomeEvent(sock, update)
+  })
+
+  // ======================
+  //      ANTIDELETE
+  // ======================
+  sock.ev.on('messages.update', async (updates) => {
+    await antideleteEvent(sock, updates)
   })
 
   // ======================
