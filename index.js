@@ -19,6 +19,7 @@ const handler = require('./handler')
 // EVENTOS
 const welcomeEvent = require('./lib/events/welcome')
 const antideleteEvent = require('./lib/events/antidelete')
+const { antiviewonceEvent } = require('./lib/events/antiviewonce')
 
 async function startBot() {
   loadDatabase()
@@ -43,10 +44,13 @@ async function startBot() {
     const msg = messages[0]
     if (!msg) return
 
-    // Guardar mensaje para antidelete
+    // 🔹 ANTIVIEWONCE (va aquí, no en otro lado)
+    await antiviewonceEvent(sock, msg)
+
+    // 🔹 ANTIDELETE (guardar mensajes)
     antideleteEvent.storeMessage(msg)
 
-    // Pasar al handler
+    // 🔹 COMANDOS
     await handler(sock, msg)
   })
 
@@ -58,7 +62,7 @@ async function startBot() {
   })
 
   // ======================
-  // ANTIDELETE
+  // ANTIDELETE (cuando borran)
   // ======================
   sock.ev.on('messages.update', async (updates) => {
     await antideleteEvent.antideleteEvent(sock, updates)
