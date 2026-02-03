@@ -1,3 +1,4 @@
+console.log(require('./lib/jid'))
 const fs = require('fs')
 const path = require('path')
 
