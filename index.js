@@ -18,8 +18,8 @@ const handler = require('./handler')
 
 // EVENTOS
 const welcomeEvent = require('./lib/events/welcome')
+const detectEvent = require('./lib/events/detect')
 const antideleteEvent = require('./lib/events/antidelete')
-const { antiviewonceEvent } = require('./lib/events/antiviewonce')
 
 async function startBot() {
   loadDatabase()
@@ -44,21 +44,11 @@ async function startBot() {
     const msg = messages[0]
     if (!msg) return
 
-    // 🔹 ANTIVIEWONCE (va aquí, no en otro lado)
-    await antiviewonceEvent(sock, msg)
-
-    // 🔹 ANTIDELETE (guardar mensajes)
+    // ANTIDELETE (guardar mensajes)
     antideleteEvent.storeMessage(msg)
 
-    // 🔹 COMANDOS
+    // COMANDOS
     await handler(sock, msg)
-  })
-
-  // ======================
-  // WELCOME / DESPEDIDAS
-  // ======================
-  sock.ev.on('group-participants.update', async (update) => {
-    await welcomeEvent(sock, update)
   })
 
   // ======================
@@ -66,6 +56,23 @@ async function startBot() {
   // ======================
   sock.ev.on('messages.update', async (updates) => {
     await antideleteEvent.antideleteEvent(sock, updates)
+  })
+
+  // ======================
+  // WELCOME / ADMINS / EXPULSIONES
+  // ======================
+  sock.ev.on('group-participants.update', async (update) => {
+    await welcomeEvent(sock, update)
+    await detectEvent(sock, update)
+  })
+
+  // ======================
+  // DETECT (cambios del grupo)
+  // ======================
+  sock.ev.on('groups.update', async (updates) => {
+    for (const update of updates) {
+      await detectEvent(sock, update)
+    }
   })
 
   // ======================
