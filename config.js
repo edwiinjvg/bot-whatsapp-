@@ -6,8 +6,8 @@ global.config = {
     number: '573001181148'
   },
   owner: [
-    name: 'Edwin'
-    number: '573005094862'
+    name: 'Edwin',
+    number: '573005094862',
   ],
   prefixes: ['.', '!', '#', '/', '?', '*']
 }
