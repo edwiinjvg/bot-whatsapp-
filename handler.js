@@ -11,7 +11,7 @@ const {
 
 const { logMessage } = require('./lib/logMessage')
 const { addExp } = require('./lib/level')
-const { jidFromMessage } = require('./lib/jid')
+const { jidFromMessage } = require('./lib/helpers/jid')
 const { getAdmins } = require('./lib/permissions')
 const { validatePlugin } = require('./lib/pluginValidator')
 const { processEconomy } = require('./lib/economy')
