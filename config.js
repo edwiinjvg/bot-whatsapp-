@@ -3,10 +3,11 @@ global.config = {
   bot: {
     name: 'Botsito',
     version: '1.0.0',
-    number: '573XXXXXXXXX'
+    number: '573001181148'
   },
   owner: [
-    '573005094862'
+    name: 'Edwin'
+    number: '573005094862'
   ],
   prefixes: ['.', '!', '#', '/', '?', '*']
 }
