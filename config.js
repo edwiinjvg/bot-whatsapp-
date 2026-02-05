@@ -5,10 +5,10 @@ global.config = {
     version: '1.0.0',
     number: '573001181148'
   },
-  owner: [
+  owner: {
     name: 'Edwin',
     number: '573005094862',
-  ],
+  },
   prefixes: ['.', '!', '#', '/', '?', '*']
 }
 
