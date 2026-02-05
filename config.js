@@ -28,16 +28,16 @@ global.sticker = {
 // --- LINKS GLOBALES (para links invisibles, previews, etc) ---
 global.links = {
   socials: [
-    'https://instagram.com/edwinnjvg',
-    'https://tiktok.com/edwinjvg'
+    'instagram.com/edwinnjvg',
+    'tiktok.com/edwinjvg'
   ],
   group: [
-    'https://chat.whatsapp.com/DAhJ6NbqwgG7YjuMZuYsZ3'
+    'chat.whatsapp.com/DAhJ6NbqwgG7YjuMZuYsZ3'
   ],
   all: [
-    'https://instagram.com/edwinnjvg',
-    'https://tiktok.com/edwinjvg',
-    'https://chat.whatsapp.com/DAhJ6NbqwgG7YjuMZuYsZ3'
+    'instagram.com/edwinnjvg',
+    'tiktok.com/edwinjvg',
+    'chat.whatsapp.com/DAhJ6NbqwgG7YjuMZuYsZ3'
   ]
 }
 
