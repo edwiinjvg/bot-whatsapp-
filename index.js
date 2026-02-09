@@ -52,7 +52,7 @@ async function startBot() {
   })
 
   // ======================
-  // ANTIDELETE (cuando borran)
+  // ANTIDELETE
   // ======================
   sock.ev.on('messages.update', async (updates) => {
     await antideleteEvent.antideleteEvent(sock, updates)
@@ -67,7 +67,7 @@ async function startBot() {
   })
 
   // ======================
-  // DETECT (cambios del grupo)
+  // DETECT
   // ======================
   sock.ev.on('groups.update', async (updates) => {
     for (const update of updates) {
